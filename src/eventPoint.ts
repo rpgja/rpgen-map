@@ -9,13 +9,13 @@ export type EventPoint = {
  */
 export type Command = {};
 
-export type Trigger = {
-  z: 0; // 調べた時
-  touch: 1; // 触った時
-};
+export enum Trigger {
+  z = 0, // 調べた時
+  touch = 1, // 触った時
+}
 
 export type EventPhase = {
-  if: {
+  when: {
     trigger: Trigger;
     sw: number;
     gold: number;

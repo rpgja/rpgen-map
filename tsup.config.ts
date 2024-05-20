@@ -1,5 +1,4 @@
 import { defineConfig } from "tsup";
-import { join } from "node:path";
 
 export default defineConfig({
   target: "esnext",
@@ -7,6 +6,5 @@ export default defineConfig({
   clean: true,
   dts: true,
   sourcemap: true,
-  format: "esm",
-  tsconfig: join(import.meta.dirname, "tsconfig.json")
+  format: "esm"
 });

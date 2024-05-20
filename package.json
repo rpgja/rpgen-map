@@ -9,6 +9,7 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "devDependencies": {
+    "@types/node": "^20.12.12",
     "rimraf": "^5.0.7",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5"

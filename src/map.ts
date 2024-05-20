@@ -1,25 +1,25 @@
 import { HashMap } from "@/utils/collections.js";
 import { Position } from "@/types.js";
 
-export type MapInit = {
+export type RPGMapInit = {
   initialHeroPosition: Position,
   backgroundImageUrl: string
 };
 
-export type MapChunks = HashMap<string, string[]>;
+export type RPGMapChunks = HashMap<string, string[]>;
 
-export class Map {
+export class RPGMap {
   readonly initialHeroPosition: Position;
   readonly backgroundImageUrl: string;
 
-  constructor(init: MapInit) {
+  constructor(init: RPGMapInit) {
     this.initialHeroPosition = init.initialHeroPosition;
     this.backgroundImageUrl = init.backgroundImageUrl;
   }
 
-  static #parseChunks(input: string): MapChunks {
+  static #parseChunks(input: string): RPGMapChunks {
     const inputLength = input.length;
-    const chunks: MapChunks = new HashMap();
+    const chunks: RPGMapChunks = new HashMap();
     const readToken = (position: number, condition: (ch: string, i: number) => boolean): string => {
       let token = "";
 
@@ -63,7 +63,7 @@ export class Map {
 
   static readonly #DEFAULT_BACKGROUND_IMAGE_URL = "http://i.imgur.com/qiN1und.jpg";
 
-  static #parseInitialHeroPosition(chunks: MapChunks): Position {
+  static #parseInitialHeroPosition(chunks: RPGMapChunks): Position {
     const [x, y] = chunks.get("HERO")?.[0]
       ?.split(",")
       ?.slice(0, 2)
@@ -78,15 +78,15 @@ export class Map {
     return { x, y };
   }
 
-  static parse(input: string): Map {
-    const chunks = Map.#parseChunks(input);
+  static parse(input: string): RPGMap {
+    const chunks = RPGMap.#parseChunks(input);
 
     console.log(chunks);
 
-    const backgroundImageUrl = chunks.get("BGIMG")?.[0] ?? Map.#DEFAULT_BACKGROUND_IMAGE_URL;
-    const initialHeroPosition = Map.#parseInitialHeroPosition(chunks);
+    const backgroundImageUrl = chunks.get("BGIMG")?.[0] ?? RPGMap.#DEFAULT_BACKGROUND_IMAGE_URL;
+    const initialHeroPosition = RPGMap.#parseInitialHeroPosition(chunks);
 
-    return new Map({
+    return new RPGMap({
       backgroundImageUrl,
       initialHeroPosition
     });

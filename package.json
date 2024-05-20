@@ -1,0 +1,43 @@
+{
+  "author": "rpgja",
+  "bugs": {
+    "url": "https://github.com/rpgja/rpgen-map/issues"
+  },
+  "description": "Library on map data for RPGEN.",
+  "devDependencies": {
+    "rimraf": "^5.0.7",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "LICENSE"
+  ],
+  "homepage": "https://github.com/rpgja/rpgen-map#readme",
+  "keywords": [
+    "rpgen"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "name": "rpgen-map",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rpgja/rpgen-map.git"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsup",
+    "prepare": "bun run build"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}

@@ -1,5 +1,5 @@
-import { HashMap } from "@/utils/collections.js";
-import { Position } from "@/types.js";
+import { HashMap } from "./utils/collections.js";
+import { Position } from "./types.js";
 
 export type MapInit = {
   initialHeroPosition: Position,

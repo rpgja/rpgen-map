@@ -1,10 +1,12 @@
 import { HashMap } from "@/utils/collections.js";
 import { Position, SPoint } from "@/types.js";
+import { Floor } from "./floor.js";
 
 export type RPGMapInit = {
   initialHeroPosition: Position;
   backgroundImageUrl: string;
-  sPoints: SPoint[];
+  sPoints: SPoint[],
+  floor: Floor
 };
 
 export type RPGMapChunks = HashMap<string, string[]>;
@@ -13,10 +15,12 @@ export class RPGMap {
   readonly initialHeroPosition: Position;
   readonly backgroundImageUrl: string;
   readonly sPoints: SPoint[];
+  readonly floor: Floor;
 
   constructor(init: RPGMapInit) {
     this.initialHeroPosition = init.initialHeroPosition;
     this.backgroundImageUrl = init.backgroundImageUrl;
+    this.floor = init.floor;
     this.sPoints = init.sPoints;
   }
 
@@ -86,6 +90,13 @@ export class RPGMap {
     return { x, y };
   }
 
+  static #parseFloor(chunks: RPGMapChunks): Floor {
+    const rawFloor = chunks.get("FLOOR")?.[0]?.split(/\r?\n/)?.flatMap(l => l.split(/\s+/)) ?? [];
+    const floor = new Floor(rawFloor);
+
+    return floor;
+  }
+
   static #parseSPoint(chunks: RPGMapChunks): SPoint[] {
     const sPointChunks = chunks.get("SPOINT");
     if (!sPointChunks) {
@@ -122,11 +133,15 @@ export class RPGMap {
       chunks.get("BGIMG")?.[0] ?? RPGMap.#DEFAULT_BACKGROUND_IMAGE_URL;
     const initialHeroPosition = RPGMap.#parseInitialHeroPosition(chunks);
     const sPoints = RPGMap.#parseSPoint(chunks);
+    const floor = RPGMap.#parseFloor(chunks);
+
+    console.log(floor);
 
     return new RPGMap({
       backgroundImageUrl,
       initialHeroPosition,
       sPoints,
+      floor
     });
   }
 }

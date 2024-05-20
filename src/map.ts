@@ -1,9 +1,10 @@
 import { HashMap } from "@/utils/collections.js";
-import { Position } from "@/types.js";
+import { Position, SPoint } from "@/types.js";
 
 export type RPGMapInit = {
-  initialHeroPosition: Position,
-  backgroundImageUrl: string
+  initialHeroPosition: Position;
+  backgroundImageUrl: string;
+  sPoints: SPoint[];
 };
 
 export type RPGMapChunks = HashMap<string, string[]>;
@@ -11,16 +12,21 @@ export type RPGMapChunks = HashMap<string, string[]>;
 export class RPGMap {
   readonly initialHeroPosition: Position;
   readonly backgroundImageUrl: string;
+  readonly sPoints: SPoint[];
 
   constructor(init: RPGMapInit) {
     this.initialHeroPosition = init.initialHeroPosition;
     this.backgroundImageUrl = init.backgroundImageUrl;
+    this.sPoints = init.sPoints;
   }
 
   static #parseChunks(input: string): RPGMapChunks {
     const inputLength = input.length;
     const chunks: RPGMapChunks = new HashMap();
-    const readToken = (position: number, condition: (ch: string, i: number) => boolean): string => {
+    const readToken = (
+      position: number,
+      condition: (ch: string, i: number) => boolean
+    ): string => {
       let token = "";
 
       while (condition(input[position]!, position) && position < inputLength) {
@@ -32,13 +38,13 @@ export class RPGMap {
 
     for (let i = 0; i < inputLength; i++) {
       // skip whitespaces
-      i += readToken(i, ch => /\s/.test(ch)).length;
+      i += readToken(i, (ch) => /\s/.test(ch)).length;
 
       if (input[i] === "#") {
         // skip "#"
         i++;
 
-        const name = readToken(i, ch => /\S/.test(ch));
+        const name = readToken(i, (ch) => /\S/.test(ch));
 
         i += name.length;
 
@@ -61,14 +67,16 @@ export class RPGMap {
     return chunks;
   }
 
-  static readonly #DEFAULT_BACKGROUND_IMAGE_URL = "http://i.imgur.com/qiN1und.jpg";
+  static readonly #DEFAULT_BACKGROUND_IMAGE_URL =
+    "http://i.imgur.com/qiN1und.jpg";
 
   static #parseInitialHeroPosition(chunks: RPGMapChunks): Position {
-    const [x, y] = chunks.get("HERO")?.[0]
-      ?.split(",")
-      ?.slice(0, 2)
-      ?.map(n => parseInt(n))
-      ?? [];
+    const [x, y] =
+      chunks
+        .get("HERO")?.[0]
+        ?.split(",")
+        ?.slice(0, 2)
+        ?.map((n) => parseInt(n)) ?? [];
 
     if (x === undefined || y === undefined) {
       // TODO
@@ -78,17 +86,47 @@ export class RPGMap {
     return { x, y };
   }
 
+  static #parseSPoint(chunks: RPGMapChunks): SPoint[] {
+    const sPointChunks = chunks.get("SPOINT");
+    if (!sPointChunks) {
+      return [];
+    }
+    const sPoints: SPoint[] = [];
+    for (const chunk of sPointChunks) {
+      const arr = chunk.split(",");
+      const [x, y] = arr.slice(0, 2).map(parseInt);
+      if (x === undefined || y === undefined) {
+        // TODO
+        throw new TypeError();
+      }
+      const once = arr.at(2) === "1"; // ToDo: fix
+      const msg = String(arr.at(3));
+      sPoints.push({
+        at: {
+          x,
+          y,
+        },
+        once,
+        msg,
+      });
+    }
+    return sPoints;
+  }
+
   static parse(input: string): RPGMap {
     const chunks = RPGMap.#parseChunks(input);
 
     console.log(chunks);
 
-    const backgroundImageUrl = chunks.get("BGIMG")?.[0] ?? RPGMap.#DEFAULT_BACKGROUND_IMAGE_URL;
+    const backgroundImageUrl =
+      chunks.get("BGIMG")?.[0] ?? RPGMap.#DEFAULT_BACKGROUND_IMAGE_URL;
     const initialHeroPosition = RPGMap.#parseInitialHeroPosition(chunks);
+    const sPoints = RPGMap.#parseSPoint(chunks);
 
     return new RPGMap({
       backgroundImageUrl,
-      initialHeroPosition
+      initialHeroPosition,
+      sPoints,
     });
   }
 }

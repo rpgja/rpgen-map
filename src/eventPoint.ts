@@ -7,7 +7,9 @@ export type EventPoint = {
 /**
  * 命令文
  */
-export type Command = {};
+export type Command = {
+  rawString: string; // 命令文の生の文字列
+};
 
 export enum UserAction {
   z = 0, // 調べた時

@@ -8,7 +8,7 @@
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "devDependencies": {
+  "dependencies": {
     "rimraf": "^5.0.7",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5"

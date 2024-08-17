@@ -1,3 +1,5 @@
+import type { Position } from "@/types/types.js";
+
 /**
  * Classification of Sprite.
  */

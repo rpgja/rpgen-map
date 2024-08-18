@@ -23,11 +23,11 @@ export const castTile2RawTile = (tile: Tile): RawTile | null => {
       if (tile.collision) {
         rawTile += "C";
       }
-      return rawTile as RawTile;
+      return toRawTile(rawTile);
     }
     case SpriteType.DQStillSprite: {
       // collisionはここでは反映されず、checkWalkableTile(RawTile)にて判定される
-      return `${tile.sprite.surface.x}_${tile.sprite.surface.y}` as RawTile;
+      return toRawTile(`${tile.sprite.surface.x}_${tile.sprite.surface.y}`);
     }
     default: {
       return null;

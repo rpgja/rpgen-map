@@ -15,7 +15,7 @@ export type Tile = {
   collision: boolean;
 };
 
-export const castTile2RawTile = (tile: Tile): RawTile | null => {
+export const castTile2RawTile = (tile: Tile): RawTile => {
   switch (tile.sprite.type) {
     case SpriteType.CustomStillSprite: {
       let rawTile = "";
@@ -30,7 +30,7 @@ export const castTile2RawTile = (tile: Tile): RawTile | null => {
       return toRawTile(`${tile.sprite.surface.x}_${tile.sprite.surface.y}`);
     }
     default: {
-      return null;
+      throw new Error("Unknown tile layer.");
     }
   }
 };

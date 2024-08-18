@@ -1,6 +1,6 @@
 import { checkWalkableTile } from "@/sprite.js";
 import { SpriteType, type StillSprite } from "@/types/sprite.js";
-import type { RawTile, Tile } from "@/types/tile.js";
+import { type RawTile, type Tile, toRawTile } from "@/types/tile.js";
 import type { Size } from "@/types/types.js";
 import { LargeMap } from "@/utils/collections.js";
 
@@ -100,7 +100,8 @@ export class TileChipMap {
       };
     } else {
       collision = rawTile.includes("C");
-      rawTile = rawTile.replaceAll("C", "");
+      // TODO: RawTileへのキャストが安全か未確認
+      rawTile = toRawTile(rawTile.replaceAll("C", ""));
       sprite = {
         type: SpriteType.CustomStillSprite,
         id: Number(rawTile.match(/\d+/)?.[0]),

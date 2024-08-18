@@ -9,6 +9,7 @@
     "@types/bun": "^1.1.6",
     "npm-run-all2": "^6.2.2",
     "rimraf": "^6.0.1",
+    "ts-brand": "^0.1.0",
     "tsc-alias": "^1.8.10",
     "typescript": "^5.5.4"
   },

@@ -23,6 +23,7 @@ import type { TeleportPoint } from "@/types/teleport-point.js";
 import type { TreasureBoxPoint } from "@/types/treasure-box-point.js";
 import type { Direction, Position } from "@/types/types.js";
 import { escapeMetaChars, unescapeMetaChars } from "@/utils/escape.js";
+import { toRawTile } from "./types/tile.js";
 
 export type RPGMapInit = {
   initialHeroPosition?: Position;
@@ -364,7 +365,8 @@ export class RPGMap {
 
           for (const [y, line] of body.split(/\r?\n/).entries()) {
             for (const [x, rawTile] of line.split(" ").entries()) {
-              tileMap.set(x, y, rawTile);
+              // TODO: RawTileへのキャストが安全か未確認
+              tileMap.set(x, y, toRawTile(rawTile));
             }
           }
 

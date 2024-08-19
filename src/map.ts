@@ -1,12 +1,7 @@
 import { InfinityChipMap, TileChipMap } from "@/chip.js";
 // TODO
 // import { logger } from "@/utils/logger";
-import {
-  type Command,
-  CommandType,
-  ManipulateGoldCommandOperation,
-  RawCommand,
-} from "@/types/command.js";
+import { RawCommand } from "@/types/command.js";
 import {
   type EventPoint,
   EventTiming,

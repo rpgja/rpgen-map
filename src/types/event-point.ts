@@ -1,4 +1,4 @@
-import type { Command, RawCommand } from "@/types/command.js";
+import type { RawCommand } from "@/types/command.js";
 import type { Position } from "@/types/types.js";
 
 export type EventPoint = {

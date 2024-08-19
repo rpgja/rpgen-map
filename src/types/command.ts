@@ -15,6 +15,7 @@ export class RawCommand {
 
     // TODO
     switch (this.name) {
+      // Message
       case "MSG":
         return {
           type: CommandType.DisplayMessage,
@@ -28,6 +29,27 @@ export class RawCommand {
           value: Number(params.v),
         };
 
+      // Screen control
+      case "WAIT": {
+        return {
+          type: CommandType.Wait,
+          delay: Number(params.t),
+        };
+      }
+
+      // Graphics
+
+      // Movement
+
+      // Sound
+
+      // Switch
+
+      // Number
+
+      // Events
+
+      // Unknown
       default: {
         // TODO
         // logger.warn({ name, params }, "No command parser");
@@ -96,6 +118,7 @@ export type DisplayMessageCommand = {
   message: string;
 };
 
+// TODO
 export type DisplayConfirmCommand = {
   choices: [
     string, // yes

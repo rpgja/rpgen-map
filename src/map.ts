@@ -1,6 +1,4 @@
 import { InfinityChipMap, TileChipMap } from "@/chip.js";
-// TODO
-// import { logger } from "@/utils/logger";
 import { RawCommand } from "@/types/command.js";
 import {
   type EventPoint,
@@ -15,10 +13,11 @@ import {
   SpriteType,
 } from "@/types/sprite.js";
 import type { TeleportPoint } from "@/types/teleport-point.js";
+import { toRawTile } from "@/types/tile.js";
 import type { TreasureBoxPoint } from "@/types/treasure-box-point.js";
 import type { Direction, Position } from "@/types/types.js";
 import { escapeMetaChars, unescapeMetaChars } from "@/utils/escape.js";
-import { toRawTile } from "./types/tile.js";
+import { ChunkParser } from "@/utils/parser.js";
 
 export type RPGMapInit = {
   initialHeroPosition?: Position;
@@ -32,6 +31,26 @@ export type RPGMapInit = {
   floor: TileChipMap;
   objects: TileChipMap;
 };
+
+export const WellKnownChunkName = {
+  Hero: "HERO",
+  BGM: "BGM",
+  BackgroundImage: "BGIMG",
+  Floor: "FLOOR",
+  Objects: "MAP",
+  Human: "HUMAN",
+  TreasureBoxPoint: "TBOX",
+  LookPoint: "SPOINT",
+  EventPoint: "EPOINT",
+  TeleportPoint: "MPOINT",
+} as const;
+
+export type WellKnownChunkName =
+  (typeof WellKnownChunkName)[keyof typeof WellKnownChunkName];
+
+export type UnknownChunkName = string & {};
+
+export type ChunkName = WellKnownChunkName | UnknownChunkName;
 
 export class RPGMap {
   readonly initialHeroPosition: Position;
@@ -128,254 +147,322 @@ export class RPGMap {
 
   static #parseCommands(input: string): RawCommand[] {
     const commands: RawCommand[] = [];
+    const parser = new ChunkParser(input);
 
-    for (const [name, value] of RPGMap.#parseChunks(input, "#ED")) {
-      const params = RPGMap.#parseCommaSeparatedParams(value.trimStart());
+    while (!parser.isEnded()) {
+      const name = parser.parseName();
+      const end = name.startsWith("SEL")
+        ? `#SELEND${name.match(/\d+$/)?.[0]}`
+        : "#ED";
+      const value = parser.parseChunk(end);
 
-      commands.push(new RawCommand(name, params));
+      commands.push(new RawCommand(name, value));
     }
 
     return commands;
   }
 
+  static #parseInitialHeroPosition(value: string): Position {
+    const [x, y] = value.trim().split(",");
+
+    return {
+      x: Number(x),
+      y: Number(y),
+    };
+  }
+
+  /**
+   * Parse as URL without strict validation
+   */
+  static #parseLooseUrl(value: string): string | undefined {
+    const maybeUrl = value.trim();
+
+    if (maybeUrl) {
+      return maybeUrl;
+    }
+  }
+
+  static #parseHuman(value: string): Human {
+    const [rawSprite, x, y, direction, behavior, speed, message = ""] = value
+      .trimStart()
+      .split(",");
+    const position: Position = {
+      x: Number(x),
+      y: Number(y),
+    };
+    let sprite: Sprite;
+
+    switch (rawSprite?.[0]) {
+      case "A": {
+        sprite = {
+          type: SpriteType.CustomAnimationSprite,
+          id: Number(rawSprite.slice(1)),
+        };
+
+        break;
+      }
+
+      case "-": {
+        sprite = {
+          type: SpriteType.CustomStillSprite,
+          id: Number(rawSprite.slice(1)),
+        };
+
+        break;
+      }
+
+      default: {
+        sprite = {
+          type: SpriteType.DQAnimationSprite,
+          // TODO: パーサー自体は深く検証するべきではないがそうする場合は型もパース時点ではゆるくあるべき
+          surface: Number(rawSprite) as DQAnimationSpriteSurface,
+        };
+
+        break;
+      }
+    }
+
+    return {
+      sprite,
+      message: unescapeMetaChars(message),
+      position,
+      // TODO: パーサー自体は深く検証するべきではないがそうする場合は型もパース時点ではゆるくあるべき
+      direction: Number(direction) as Direction,
+      behavior: Number(behavior) as HumanBehavior,
+      speed: Number(speed),
+    };
+  }
+
+  static #parseTreasureBoxPoint(value: string): TreasureBoxPoint {
+    const [x, y, message = ""] = value.trimStart().split(",");
+    const position: Position = {
+      x: Number(x),
+      y: Number(y),
+    };
+
+    return {
+      position,
+      message: unescapeMetaChars(message),
+    };
+  }
+
+  static #parseLookPoint(value: string): LookPoint {
+    const [x, y, once, message = ""] = value.trimStart().split(",");
+    const position: Position = {
+      x: Number(x),
+      y: Number(y),
+    };
+
+    return {
+      position,
+      once: once === "1",
+      message: unescapeMetaChars(message),
+    };
+  }
+
+  static #parseTeleportPoint(value: string): TeleportPoint {
+    const [x, y, destMapId, destX, destY] = value.trim().split(",");
+    const position: Position = {
+      x: Number(x),
+      y: Number(y),
+    };
+
+    return {
+      position,
+      destination: {
+        mapId: Number(destMapId),
+        position: {
+          x: Number(destX),
+          y: Number(destY),
+        },
+      },
+    };
+  }
+
+  static #parseEventPoint(value: string): EventPoint {
+    const [, pos = "", body = ""] =
+      value.trimStart().match(/^(tx:\d+,ty:\d+),\r?\n(.+)$/s) ?? [];
+    const { tx, ty } = RPGMap.#parseCommaSeparatedParams(pos);
+    const eventPoint: EventPoint = {
+      position: {
+        x: Number(tx),
+        y: Number(ty),
+      },
+      phases: [
+        {
+          timing: EventTiming.Look,
+          sequence: [],
+        },
+        {
+          timing: EventTiming.Look,
+          condition: {},
+          sequence: [],
+        },
+        {
+          timing: EventTiming.Look,
+          condition: {},
+          sequence: [],
+        },
+        {
+          timing: EventTiming.Look,
+          condition: {},
+          sequence: [],
+        },
+      ],
+    };
+
+    const parser = new ChunkParser(body);
+
+    while (!parser.isEnded()) {
+      const name = parser.parseName();
+      const phaseNumber = name.match(/\d+$/)?.[0];
+      const value = parser.parseChunk(`#PHEND${phaseNumber}`);
+      const phase = eventPoint.phases[Number(phaseNumber)];
+
+      if (!phase) {
+        continue;
+      }
+
+      const [, cond = "", body = ""] =
+        value.trimStart().match(/(.+?),\r?\n(.+)/s) ?? [];
+      const { tm, sw, g } = RPGMap.#parseCommaSeparatedParams(cond);
+
+      if (tm) {
+        // TODO: enumからオブジェクトに変えた影響でas必須
+        phase.timing = Number(tm) as EventTiming;
+      }
+
+      // Non primary phase and has phase condition
+      if (name !== "PH0") {
+        if (sw) {
+          (phase as SecondaryEventPhase).condition.switch = Number(sw);
+        }
+
+        if (g) {
+          (phase as SecondaryEventPhase).condition.gold = Number(g);
+        }
+      }
+
+      phase.sequence = RPGMap.#parseCommands(body);
+    }
+
+    return eventPoint;
+  }
+
+  static #parseTileChipMap(value: string): TileChipMap {
+    const tileChipMap = new TileChipMap();
+    const body = value.replace(/^\r?\n/, "");
+
+    for (const [y, line] of body.split(/\r?\n/).entries()) {
+      for (const [x, rawTile] of line.split(" ").entries()) {
+        // TODO: RawTileへのキャストが安全か未確認
+        tileChipMap.set(x, y, toRawTile(rawTile));
+      }
+    }
+
+    return tileChipMap;
+  }
+
   static parse(input: string): RPGMap {
+    const parser = new ChunkParser(input);
     const lookPoints = new InfinityChipMap<LookPoint>();
     const treasureBoxPoints = new InfinityChipMap<TreasureBoxPoint>();
     const teleportPoints = new InfinityChipMap<TeleportPoint>();
     const eventPoints = new InfinityChipMap<EventPoint>();
-    const floor = new TileChipMap();
-    const objects = new TileChipMap();
+    let floor: TileChipMap | undefined;
+    let objects: TileChipMap | undefined;
     const humans = new InfinityChipMap<Human>();
     let bgmUrl: string | undefined;
     let backgroundImageUrl: string | undefined;
     let initialHeroPosition: Position | undefined;
 
-    for (const [name, value] of RPGMap.#parseChunks(input, "#END")) {
+    while (!parser.isEnded()) {
+      const name = parser.parseName() as ChunkName;
+      const value = parser.parseChunk("#END");
+
       switch (name) {
-        case "HERO": {
-          const [x, y] = value.trim().split(",");
-
-          initialHeroPosition = {
-            x: Number(x),
-            y: Number(y),
-          };
+        case WellKnownChunkName.Hero: {
+          initialHeroPosition = RPGMap.#parseInitialHeroPosition(value);
 
           break;
         }
 
-        case "BGM": {
-          bgmUrl = value.trim();
+        case WellKnownChunkName.BGM: {
+          bgmUrl = RPGMap.#parseLooseUrl(value);
 
           break;
         }
 
-        case "BGIMG": {
-          backgroundImageUrl = value.trim();
+        case WellKnownChunkName.BackgroundImage: {
+          backgroundImageUrl = RPGMap.#parseLooseUrl(value);
 
           break;
         }
 
-        case "HUMAN": {
-          const [rawSprite, x, y, direction, behavior, speed, message = ""] =
-            value.trim().split(",");
-          let sprite: Sprite;
+        case WellKnownChunkName.Human: {
+          const human = RPGMap.#parseHuman(value);
 
-          switch (rawSprite?.[0]) {
-            case "A": {
-              sprite = {
-                type: SpriteType.CustomAnimationSprite,
-                id: Number(rawSprite.slice(1)),
-              };
-
-              break;
-            }
-
-            case "-": {
-              sprite = {
-                type: SpriteType.CustomStillSprite,
-                id: Number(rawSprite.slice(1)),
-              };
-
-              break;
-            }
-
-            default: {
-              sprite = {
-                type: SpriteType.DQAnimationSprite,
-                surface: Number(rawSprite) as DQAnimationSpriteSurface,
-              };
-
-              break;
-            }
-          }
-
-          const position: Position = {
-            x: Number(x),
-            y: Number(y),
-          };
-
-          humans.set(position.x, position.y, {
-            sprite,
-            message: unescapeMetaChars(message),
-            position,
-            direction: Number(direction) as Direction,
-            behavior: Number(behavior) as HumanBehavior,
-            speed: Number(speed),
-          });
+          humans.set(human.position.x, human.position.y, human);
 
           break;
         }
 
-        case "TBOX": {
-          const [x, y, message = ""] = value.trimStart().split(",");
-          const position: Position = {
-            x: Number(x),
-            y: Number(y),
-          };
+        case WellKnownChunkName.TreasureBoxPoint: {
+          const point = RPGMap.#parseTreasureBoxPoint(value);
 
-          treasureBoxPoints.set(position.x, position.y, {
-            position,
-            message: unescapeMetaChars(message),
-          });
+          treasureBoxPoints.set(point.position.x, point.position.y, point);
 
           break;
         }
 
-        case "SPOINT": {
-          const [x, y, once, message = ""] = value.trimStart().split(",");
-          const position: Position = {
-            x: Number(x),
-            y: Number(y),
-          };
+        case WellKnownChunkName.LookPoint: {
+          const point = RPGMap.#parseLookPoint(value);
 
-          lookPoints.set(position.x, position.y, {
-            position,
-            once: once === "1",
-            message: unescapeMetaChars(message),
-          });
+          lookPoints.set(point.position.x, point.position.y, point);
 
           break;
         }
 
-        case "MPOINT": {
-          const [x, y, destMapId, destX, destY] = value.trim().split(",");
-          const position: Position = {
-            x: Number(x),
-            y: Number(y),
-          };
+        case WellKnownChunkName.TeleportPoint: {
+          const point = RPGMap.#parseTeleportPoint(value);
 
-          teleportPoints.set(position.x, position.y, {
-            position,
-            destination: {
-              mapId: Number(destMapId),
-              position: {
-                x: Number(destX),
-                y: Number(destY),
-              },
-            },
-          });
+          teleportPoints.set(point.position.x, point.position.y, point);
 
           break;
         }
 
-        // TODO
-        case "EPOINT": {
-          const [, pos = "", body = ""] =
-            value.trimStart().match(/^(tx:\d+,ty:\d+),\r?\n(.+)$/s) ?? [];
-          const { tx, ty } = RPGMap.#parseCommaSeparatedParams(pos);
-          const eventPoint: EventPoint = {
-            position: {
-              x: Number(tx),
-              y: Number(ty),
-            },
-            phases: [
-              {
-                timing: EventTiming.Look,
-                sequence: [],
-              },
-              {
-                timing: EventTiming.Look,
-                condition: {},
-                sequence: [],
-              },
-              {
-                timing: EventTiming.Look,
-                condition: {},
-                sequence: [],
-              },
-              {
-                timing: EventTiming.Look,
-                condition: {},
-                sequence: [],
-              },
-            ],
-          };
+        case WellKnownChunkName.EventPoint: {
+          const point = RPGMap.#parseEventPoint(value);
 
-          for (const [name, value] of RPGMap.#parseChunks(
-            body,
-            (name) => `#PHEND${name.at(-1)}`,
-          )) {
-            const phase = eventPoint.phases[Number(name.at(-1))];
-
-            if (!phase) {
-              continue;
-            }
-
-            const [, cond = "", body = ""] =
-              value.trimStart().match(/(.+?),\r?\n(.+)/s) ?? [];
-            const { tm, sw, g } = RPGMap.#parseCommaSeparatedParams(cond);
-
-            if (tm) {
-              // TODO: enumからオブジェクトに変えた影響でas必須
-              phase.timing = Number(tm) as EventTiming;
-            }
-
-            // Non primary phase and has phase condition
-            if (name !== "PH0") {
-              if (sw) {
-                (phase as SecondaryEventPhase).condition.switch = Number(sw);
-              }
-
-              if (g) {
-                (phase as SecondaryEventPhase).condition.gold = Number(g);
-              }
-            }
-
-            phase.sequence = RPGMap.#parseCommands(body);
-          }
-
-          eventPoints.set(
-            eventPoint.position.x,
-            eventPoint.position.y,
-            eventPoint,
-          );
+          eventPoints.set(point.position.x, point.position.y, point);
 
           break;
         }
 
-        case "FLOOR":
-        case "MAP": {
-          const tileMap = name === "FLOOR" ? floor : objects;
-          const body = value.replace(/^\r?\n/, "");
+        case WellKnownChunkName.Floor:
+        case WellKnownChunkName.Objects: {
+          const tileChipMap = RPGMap.#parseTileChipMap(value);
 
-          for (const [y, line] of body.split(/\r?\n/).entries()) {
-            for (const [x, rawTile] of line.split(" ").entries()) {
-              // TODO: RawTileへのキャストが安全か未確認
-              tileMap.set(x, y, toRawTile(rawTile));
-            }
+          if (name === WellKnownChunkName.Floor) {
+            floor = tileChipMap;
+          } else if (name === WellKnownChunkName.Objects) {
+            objects = tileChipMap;
           }
 
           break;
         }
 
         default: {
-          // TODO
-          // logger.warn({ name, value }, "No parser");
-
-          break;
+          name;
         }
       }
     }
+
+    console.log({
+      initialHeroPosition,
+      bgmUrl,
+      backgroundImageUrl,
+    });
 
     return new RPGMap({
       initialHeroPosition,
@@ -386,8 +473,8 @@ export class RPGMap {
       backgroundImageUrl,
       treasureBoxPoints,
       teleportPoints,
-      objects,
-      floor,
+      objects: objects ?? new TileChipMap(),
+      floor: floor ?? new TileChipMap(),
     });
   }
 
@@ -541,20 +628,8 @@ export class RPGMap {
           str += phaseHeader;
 
           for (const c of p.sequence) {
-            str += `#${c.name}\n`;
-
-            let params = "";
-
-            for (const [k, v] of Object.entries(c.params)) {
-              params += `${k}:${escapeMetaChars(v)},`;
-            }
-
-            if (params.length > 0) {
-              params += "\n";
-            }
-
-            str += params;
-            str += "#ED\n";
+            str += c.toString();
+            str += "\n";
           }
 
           str += `#PHEND${i}\n`;

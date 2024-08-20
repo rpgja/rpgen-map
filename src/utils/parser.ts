@@ -78,3 +78,24 @@ export class ChunkParser {
     return chunk;
   }
 }
+
+/**
+ * Parse comma separated params
+ */
+export const parseCSP = (input: string): Record<string, string> => {
+  const params: Partial<Record<string, string>> = {};
+
+  for (const [name, value = ""] of input
+    .trim()
+    .split(",")
+    .filter((p) => p.length > 0)
+    .map((v) => v.split(":"))) {
+    if (!name) {
+      continue;
+    }
+
+    params[name] = value;
+  }
+
+  return params as Record<string, string>;
+};

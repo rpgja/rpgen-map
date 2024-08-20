@@ -17,7 +17,7 @@ import { toRawTile } from "@/types/tile.js";
 import type { TreasureBoxPoint } from "@/types/treasure-box-point.js";
 import type { Direction, Position } from "@/types/types.js";
 import { escapeMetaChars, unescapeMetaChars } from "@/utils/escape.js";
-import { ChunkParser } from "@/utils/parser.js";
+import { ChunkParser, parseCSP } from "@/utils/parser.js";
 
 export type RPGMapInit = {
   initialHeroPosition?: Position;
@@ -125,24 +125,6 @@ export class RPGMap {
 
       yield [name, value];
     }
-  }
-
-  static #parseCommaSeparatedParams(input: string): Record<string, string> {
-    const params: Partial<Record<string, string>> = {};
-
-    for (const [name, value = ""] of input
-      .trim()
-      .split(",")
-      .filter((p) => p.length > 0)
-      .map((v) => v.split(":"))) {
-      if (!name) {
-        continue;
-      }
-
-      params[name] = value;
-    }
-
-    return params as Record<string, string>;
   }
 
   static #parseCommands(input: string): RawCommand[] {
@@ -282,7 +264,7 @@ export class RPGMap {
   static #parseEventPoint(value: string): EventPoint {
     const [, pos = "", body = ""] =
       value.trimStart().match(/^(tx:\d+,ty:\d+),\r?\n(.+)$/s) ?? [];
-    const { tx, ty } = RPGMap.#parseCommaSeparatedParams(pos);
+    const { tx, ty } = parseCSP(pos);
     const eventPoint: EventPoint = {
       position: {
         x: Number(tx),
@@ -325,7 +307,7 @@ export class RPGMap {
 
       const [, cond = "", body = ""] =
         value.trimStart().match(/(.+?),\r?\n(.+)/s) ?? [];
-      const { tm, sw, g } = RPGMap.#parseCommaSeparatedParams(cond);
+      const { tm, sw, g } = parseCSP(cond);
 
       if (tm) {
         // TODO: enumからオブジェクトに変えた影響でas必須

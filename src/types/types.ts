@@ -1,3 +1,8 @@
+export type PercentPosition = {
+  xPercent: number;
+  yPercent: number;
+};
+
 export type Position = {
   x: number;
   y: number;

@@ -7,3 +7,4 @@ export * from "@/types/teleport-point.js";
 export * from "@/types/tile.js";
 export * from "@/types/treasure-box-point.js";
 export * from "@/types/types.js";
+export * from "@/types/color.js";

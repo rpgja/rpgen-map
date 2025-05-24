@@ -34,6 +34,7 @@
     "build": "run-s lint test clean tsc tsc-alias",
     "clean": "rimraf dist",
     "lint": "biome lint src",
+    "prepublishOnly": "bun run build",
     "test": "bun test --coverage",
     "tsc": "tsc -p tsconfig.build.json",
     "tsc-alias": "tsc-alias -p tsconfig.build.json"

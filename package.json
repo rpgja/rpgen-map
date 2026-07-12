@@ -46,7 +46,7 @@
     "tsc": "tsc -p tsconfig.build.json",
     "tsc-alias": "tsc-alias -p tsconfig.build.json",
     "patch": "npm version patch",
-		"publish-dangerous-dont-use-this-command": "npm publish --access public"
+		"publish": "npm publish --access public"
   },
   "trustedDependencies": [
     "@biomejs/biome"

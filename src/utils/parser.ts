@@ -94,7 +94,7 @@ export const parseCSP = (input: string): Record<string, string> => {
       continue;
     }
 
-    params[name] = value;
+    params[name.trim()] = value;
   }
 
   return params as Record<string, string>;

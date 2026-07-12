@@ -9,15 +9,22 @@ export class RawCommand {
 
   constructor(name: string, body: string) {
     this.#name = name;
-    this.#body = body;
+    this.#body = body.trim();
   }
 
   toString(): string {
-    let s = `#${this.#name}${this.#body}`;
+    let s = `#${this.#name}`;
 
     if (this.#name.startsWith("SEL")) {
+      s += ` ${this.#body}\n`;
       s += `#SELEND${this.#name.match(/^SEL(\d+)/)?.[1]}`;
     } else {
+      if (this.#body) {
+        // Retain newlines around the body for formatting consistency
+        s += `\n${this.#body}\n`;
+      } else {
+        s += "\n";
+      }
       s += "#ED";
     }
 

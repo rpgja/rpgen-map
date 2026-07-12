@@ -45,8 +45,7 @@
     "test": "bun test --coverage",
     "tsc": "tsc -p tsconfig.build.json",
     "tsc-alias": "tsc-alias -p tsconfig.build.json",
-    "patch": "npm version patch",
-		"publish": "npm publish --access public"
+    "patch": "npm version patch"
   },
   "trustedDependencies": [
     "@biomejs/biome"

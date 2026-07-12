@@ -20,9 +20,15 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "package.json", "LICENSE"],
+  "files": [
+    "dist",
+    "package.json",
+    "LICENSE"
+  ],
   "homepage": "https://github.com/rpgja/rpgen-map#readme",
-  "keywords": ["rpgen"],
+  "keywords": [
+    "rpgen"
+  ],
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -39,10 +45,12 @@
     "test": "bun test --coverage",
     "tsc": "tsc -p tsconfig.build.json",
     "tsc-alias": "tsc-alias -p tsconfig.build.json",
-		"patch": "npm version patch"
+    "patch": "npm version patch"
   },
-  "trustedDependencies": ["@biomejs/biome"],
+  "trustedDependencies": [
+    "@biomejs/biome"
+  ],
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

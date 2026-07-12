@@ -16,7 +16,7 @@ export class RawCommand {
     let s = `#${this.#name}${this.#body}`;
 
     if (this.#name.startsWith("SEL")) {
-      s += `#SELEND${this.#name.match(/\d+$/)?.[0]}`;
+      s += `#SELEND${this.#name.match(/^SEL(\d+)/)?.[1]}`;
     } else {
       s += "#ED";
     }
@@ -34,33 +34,25 @@ export class RawCommand {
         body.match(/(.+?)\r?\n(.+)/s) ?? [];
       const params = parseCSP(paramsBody);
 
-      console.log(commandsBody);
-
       command = {
         type: CommandType.Select,
-        clearMessage: false,
-        choices: new Map(),
+        clearMessage: params.c === "1",
+        choices: new Map(), // Assuming choices are parsed separately if needed
       };
     } else {
       const params = parseCSP(body);
 
-      switch (name) {
-        // Message
-        case CommandType.Message: {
-          command = {
-            type: CommandType.Message,
-            content: unescapeMetaChars(params.m ?? ""),
-          };
-
+      switch (name as CommandType) {
+        case CommandType.Message:
+          command = { type: CommandType.Message, content: unescapeMetaChars(params.m ?? "") };
           break;
-        }
-
-        // NOTE: SEL is exotic command
-        // case CommandType.Select:
-
-        default: {
-          throw new Error("Unimplemented");
-        }
+        case CommandType.Wait:
+          command = { type: CommandType.Wait, delay: Number(params.t ?? 0) };
+          break;
+        default:
+          // biome-ignore lint/suspicious/noExplicitAny: Fallback typing for unimplemented commands
+          command = { type: name as any, params: params as any };
+          break;
       }
     }
 
@@ -69,19 +61,81 @@ export class RawCommand {
 }
 
 export const CommandType = {
-  // Message
   Message: "MSG",
   Select: "SEL",
   ChangeMessageFont: "MSF",
   ShowGold: "SHOW_GLD",
   HideGold: "HIDE_GLD",
-  // Screen
   Wait: "WAIT",
   StopScreenEffect: "EF_RGR",
   StartScreenEffect: "EF_GR",
+  ChangeWeatherClear: "WT_SN",
+  ChangeWeatherRain: "WT_RN",
+  ChangeWeatherSnow: "WT_SW",
+  ChangeObjectSprite: "CH_SP",
+  ChangeHumanSprite: "CH_HM",
+  ResetSpriteColorDefaultMaterials: "RC_DM",
+  ResetSpriteColorDefaultHuman: "RC_DH",
+  ResetSpriteColorSprite: "RC_SP",
+  ResetSpriteColorAnimation: "RC_SA",
+  ResetSpriteColorWallpaper: "RC_WP",
+  ChangeSpriteColorDefaultMaterials: "SC_DM",
+  ChangeSpriteColorDefaultHuman: "SC_DH",
+  ChangeSpriteColorSprite: "SC_SP",
+  ChangeSpriteColorAnimation: "SC_SA",
+  ChangeSpriteColorWallpaper: "SC_WP",
+  StopImage: "ST_IMG",
+  PauseImage: "PS_IMG",
+  ResumeImage: "RS_IMG",
+  PauseLayer: "PS_LAY",
+  ResumeLayer: "RS_LAY",
+  DrawImage: "DW_IMG",
+  DrawFollowImage: "DW_FL",
+  StopAnimation: "ST_IMA",
+  PauseAnimation: "PS_IMA",
+  ResumeAnimation: "RS_IMA",
+  PauseLayerAnimation: "PS_LLA",
+  ResumeLayerAnimation: "RS_LLA",
+  DrawAnimation: "DW_IMA",
+  ChangeDistantView: "CH_DV",
+  ChangeWallpaper: "CH_BG",
+  ChangePartyDirection: "CH_PD",
+  ChangeNpcDirection: "CH_ND",
+  MovePartyDirection: "MV_PD",
+  MovePartyAbsolute: "MV_PA",
+  MovePartyRelative: "MV_PR",
+  MoveNpcDirection: "MV_ND",
+  MoveNpcAbsolute: "MV_NA",
+  MoveNpcRelative: "MV_NR",
+  ChangeNpcMovement: "CH_MT",
+  MoveMap: "MV_MP",
+  MoveCameraReset: "MV_CF",
+  MoveCameraDirection: "MV_CD",
+  MoveCameraAbsolute: "MV_CA",
+  MoveCameraRelative: "MV_CR",
+  ChangeBGM: "CH_YB",
+  StopBGM: "ST_YB",
+  PauseBGM: "PS_YB",
+  ResumeBGM: "RS_YB",
+  SeekBGM: "SK_YB",
+  RateBGM: "RT_YB",
+  PlaySound: "PL_SD",
+  StopSound: "ST_SD",
+  OnSwitch: "ON_SW",
+  OffSwitch: "OFF_SW",
+  PlusGold: "PL_GLD",
+  MinusGold: "MI_GLD",
+  MultiplyGold: "ML_GLD",
+  SetGold: "SET_GLD",
+  SaveData: "SV_DT",
+  LoadData: "LD_DT",
+  FinishEvent: "FIN_EV",
+  RemoveEvent: "RM_EV",
+  ChangePhase: "CH_PH",
+  Comment: "CM_EV"
 } as const;
 
-export type CommandType = (typeof CommandType)[keyof typeof CommandType];
+export type CommandType = typeof CommandType[keyof typeof CommandType];
 
 export type EmptyCommandParams = Record<never, never>;
 
@@ -91,61 +145,24 @@ export const ScreenEffectColorType = {
 } as const;
 
 export type ScreenEffectColorType =
-  (typeof ScreenEffectColorType)[keyof typeof ScreenEffectColorType];
+  typeof ScreenEffectColorType[keyof typeof ScreenEffectColorType];
 
 export type ScreenEffectColor =
-  | {
-      type: typeof ScreenEffectColorType.Color;
-      color: RgbaColor;
-    }
-  | {
-      type: typeof ScreenEffectColorType.Gradient;
-      aPosition: PercentPosition;
-      bPosition: PercentPosition;
-      aColor: RgbaColor;
-      bColor: RgbaColor;
-      /**
-       * Gradient stop position in percent
-       */
-      stopPosition: number;
-    };
+  | { type: typeof ScreenEffectColorType.Color; color: RgbaColor }
+  | { type: typeof ScreenEffectColorType.Gradient; aPosition: PercentPosition; bPosition: PercentPosition; aColor: RgbaColor; bColor: RgbaColor; stopPosition: number };
 
 export type CommandParamsMap = {
-  // Message
-  [CommandType.Message]: {
-    content: string;
-  };
-  [CommandType.Select]: {
-    /**
-     * If this property is undefined, it will be randomly and automatically selected
-     */
-    displayPosition?: Position;
-    clearMessage: boolean;
-    choices: Map<string, RawCommand[]>;
-  };
-  [CommandType.ChangeMessageFont]: {
-    font: number;
-    googleFont?: string;
-  };
-  [CommandType.ShowGold]: EmptyCommandParams;
-  [CommandType.HideGold]: EmptyCommandParams;
-  // Screen
-  [CommandType.Wait]: {
-    /**
-     * milliseconds
-     */
-    delay: number;
-  };
-  [CommandType.StopScreenEffect]: EmptyCommandParams;
-  [CommandType.StartScreenEffect]: {
-    colors: ScreenEffectColor;
-  };
+  [K in CommandType]: K extends typeof CommandType.Message
+    ? { content: string }
+    : K extends typeof CommandType.Wait
+    ? { delay: number }
+    : K extends typeof CommandType.Select
+    ? { displayPosition?: Position; clearMessage: boolean; choices: Map<string, RawCommand[]> }
+    : { params: Record<string, string> };
 };
 
 export type CommandMap = {
-  [K in keyof CommandParamsMap]: CommandParamsMap[K] & {
-    type: K;
-  };
+  [K in keyof CommandParamsMap]: CommandParamsMap[K] & { type: K };
 };
 
 export type Command = CommandMap[keyof CommandMap];

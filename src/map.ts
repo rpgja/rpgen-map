@@ -129,7 +129,7 @@ export class RPGMap {
 
   static #parseCommands(input: string): RawCommand[] {
     const commands: RawCommand[] = [];
-    const parser = new ChunkParser(input);
+    const parser = new ChunkParser(input.trim());
 
     while (!parser.isEnded()) {
       const name = parser.parseName();
@@ -572,7 +572,7 @@ export class RPGMap {
     if (rpgMap.teleportPoints) {
       for (const p of rpgMap.teleportPoints) {
         str += "#MPOINT\n";
-        str += `${p.position.x},${p.position.y},${p.destination.mapId},${p.position.x},${p.position.y}#END\n`;
+        str += `${p.position.x},${p.position.y},${p.destination.mapId},${p.destination.position.x},${p.destination.position.y}#END\n`;
         str += "\n";
       }
     }

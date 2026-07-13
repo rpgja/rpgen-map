@@ -30,6 +30,7 @@ jobs:
 
       - name: Build docs
         run: |
+          bun run build
           bunx rimraf docs
           mkdir -p docs/api
           bunx typedoc src/index.ts --out docs/api

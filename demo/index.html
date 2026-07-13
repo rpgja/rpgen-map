@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPGEN Map Parser</title>
+  <meta name="description" content="A live browser-based demo to parse and visualize RPGEN map data directly via ESM.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="background-gradients">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+  </div>
+
+  <main class="container">
+    <header class="header">
+      <h1 class="title">RPGEN <span class="accent">Parser</span></h1>
+      <p class="subtitle">Extract data directly from RPGEN event blocks using our zero-dependency parser.</p>
+    </header>
+
+    <div class="grid">
+      <!-- Input Section -->
+      <section class="card input-card">
+        <div class="card-header">
+          <h2>Map Data Input</h2>
+          <span class="badge">Raw</span>
+        </div>
+        <div class="input-wrapper">
+          <textarea id="raw-input" placeholder="Paste your RPGEN map data here...&#10;&#10;Example:&#10;#MAP&#10;https://example.com/map.jpg&#10;#END&#10;#EPOINT&#10;tx:1,ty:2,&#10;#PH0&#10;#MSG&#10;m:Hello World,&#10;#ED&#10;#PHEND0&#10;#END"></textarea>
+        </div>
+        <div class="actions">
+          <button id="parse-button" class="btn primary">
+            <span class="btn-text">Parse Data</span>
+            <span class="btn-icon">✨</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Output Section -->
+      <section class="card output-card">
+        <div class="card-header">
+          <h2>Parsed Output</h2>
+          <span class="badge success">JSON</span>
+        </div>
+        <div class="output-wrapper">
+          <div id="loading-spinner" class="spinner hidden"></div>
+          <pre id="json-output" class="json-viewer">{"status": "waiting for input"}</pre>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>

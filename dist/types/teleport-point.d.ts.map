@@ -1,0 +1,1 @@
+{"version":3,"file":"teleport-point.d.ts","sourceRoot":"","sources":["../../src/types/teleport-point.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,kBAAkB,CAAC;AAEjD,MAAM,MAAM,wBAAwB,GAAG;IACrC,KAAK,EAAE,MAAM,CAAC;IACd,QAAQ,EAAE,QAAQ,CAAC;CACpB,CAAC;AAEF,MAAM,MAAM,aAAa,GAAG;IAC1B,QAAQ,EAAE,QAAQ,CAAC;IACnB,WAAW,EAAE,wBAAwB,CAAC;CACvC,CAAC"}

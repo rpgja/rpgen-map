@@ -1,4 +1,4 @@
-import { RPGMap } from './dist/index.js';
+import { RPGMap } from '../dist/index.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const inputEl = document.getElementById('raw-input');

@@ -20,7 +20,7 @@ export class ChunkParser {
 
     while (
       this.#position < len &&
-      WHITESPACE.test(input[this.#position] as string)
+      WHITESPACE.test(input[this.#position] ?? "")
     ) {
       this.#position++;
     }
@@ -45,7 +45,7 @@ export class ChunkParser {
 
     while (
       this.#position < len &&
-      NON_WHITESPACE.test(input[this.#position] as string)
+      NON_WHITESPACE.test(input[this.#position] ?? "")
     ) {
       name += input[this.#position];
       this.#position++;
@@ -83,7 +83,7 @@ export class ChunkParser {
  * Parse comma separated params
  */
 export const parseCSP = (input: string): Record<string, string> => {
-  const params: Partial<Record<string, string>> = {};
+  const params: Record<string, string> = {};
 
   for (const [name, value = ""] of input
     .trim()
@@ -97,5 +97,5 @@ export const parseCSP = (input: string): Record<string, string> => {
     params[name.trim()] = value;
   }
 
-  return params as Record<string, string>;
+  return params;
 };

@@ -127,22 +127,7 @@ export class RPGMap {
     }
   }
 
-  static #parseCommands(input: string): RawCommand[] {
-    const commands: RawCommand[] = [];
-    const parser = new ChunkParser(input.trim());
 
-    while (!parser.isEnded()) {
-      const name = parser.parseName();
-      const end = name.startsWith("SEL")
-        ? `#SELEND${name.match(/\d+$/)?.[0]}`
-        : "#ED";
-      const value = parser.parseChunk(end);
-
-      commands.push(new RawCommand(name, value));
-    }
-
-    return commands;
-  }
 
   static #parseInitialHeroPosition(value: string): Position {
     const [x, y] = value.trim().split(",");
@@ -316,16 +301,16 @@ export class RPGMap {
 
       // Non primary phase and has phase condition
       if (name !== "PH0") {
-        if (sw) {
-          (phase as SecondaryEventPhase).condition.switch = Number(sw);
+        if (sw && "condition" in phase) {
+          phase.condition.switch = Number(sw);
         }
 
-        if (g) {
-          (phase as SecondaryEventPhase).condition.gold = Number(g);
+        if (g && "condition" in phase) {
+          phase.condition.gold = Number(g);
         }
       }
 
-      phase.sequence = RPGMap.#parseCommands(body);
+      phase.sequence = RawCommand.parseSequence(body);
     }
 
     return eventPoint;
@@ -359,7 +344,7 @@ export class RPGMap {
     let initialHeroPosition: Position | undefined;
 
     while (!parser.isEnded()) {
-      const name = parser.parseName() as ChunkName;
+      const name = parser.parseName();
       const value = parser.parseChunk("#END");
 
       switch (name) {

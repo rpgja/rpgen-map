@@ -1,6 +1,6 @@
 import type { PercentPosition, Position } from "@/types/types.js";
 import { unescapeMetaChars } from "@/utils.js";
-import { parseCSP } from "@/utils/parser.js";
+import { ChunkParser, parseCSP } from "@/utils/parser.js";
 import type { RgbaColor } from "./color.js";
 
 export class RawCommand {
@@ -10,6 +10,23 @@ export class RawCommand {
   constructor(name: string, body: string) {
     this.#name = name;
     this.#body = body.trim();
+  }
+
+  static parseSequence(input: string): RawCommand[] {
+    const commands: RawCommand[] = [];
+    const parser = new ChunkParser(input.trim());
+
+    while (!parser.isEnded()) {
+      const name = parser.parseName();
+      const end = name.startsWith("SEL")
+        ? `#SELEND${name.match(/^SEL(\d+)/)?.[1]}`
+        : "#ED";
+      const value = parser.parseChunk(end);
+
+      commands.push(new RawCommand(name, value));
+    }
+
+    return commands;
   }
 
   toString(): string {
@@ -38,18 +55,35 @@ export class RawCommand {
 
     if (name.startsWith("SEL")) {
       const [, paramsBody = "", commandsBody = ""] =
-        body.match(/(.+?)\r?\n(.+)/s) ?? [];
+        body.match(/(.+?)\r?\n(.*)/s) ?? [];
       const params = parseCSP(paramsBody);
+      const selN = name.match(/^SEL(\d+)/)?.[1];
+
+      const choices = new Map<string, Command[]>();
+      
+      const regex = new RegExp(`^#SEL${selN}-\\d+[ \\t]*\\r?\\n?`, "gm");
+      const parts = commandsBody.split(regex);
+      
+      parts.forEach((partStr, index) => {
+        const choiceName = params[`i${index}`];
+        if (choiceName !== undefined) {
+          const rawCommands = RawCommand.parseSequence(partStr);
+          const parsedCommands = rawCommands.map((c) => c.parse());
+          choices.set(choiceName, parsedCommands);
+        }
+      });
 
       command = {
         type: CommandType.Select,
         clearMessage: params.c === "1",
-        choices: new Map(), // Assuming choices are parsed separately if needed
+        choices,
       };
     } else {
       const params = parseCSP(body);
 
-      switch (name as CommandType) {
+      const commandType = name as keyof CommandParamsMap;
+
+      switch (commandType) {
         case CommandType.Message:
           command = { type: CommandType.Message, content: unescapeMetaChars(params.m ?? "") };
           break;
@@ -57,8 +91,7 @@ export class RawCommand {
           command = { type: CommandType.Wait, delay: Number(params.t ?? 0) };
           break;
         default:
-          // biome-ignore lint/suspicious/noExplicitAny: Fallback typing for unimplemented commands
-          command = { type: name as any, params: params as any };
+          command = { type: commandType, params } as Command;
           break;
       }
     }
@@ -164,9 +197,11 @@ export type CommandParamsMap = {
     : K extends typeof CommandType.Wait
     ? { delay: number }
     : K extends typeof CommandType.Select
-    ? { displayPosition?: Position; clearMessage: boolean; choices: Map<string, RawCommand[]> }
+    ? { displayPosition?: Position; clearMessage: boolean; choices: Map<string, CommandSequence> }
     : { params: Record<string, string> };
 };
+
+export interface CommandSequence extends Array<Command> {}
 
 export type CommandMap = {
   [K in keyof CommandParamsMap]: CommandParamsMap[K] & { type: K };

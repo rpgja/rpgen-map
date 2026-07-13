@@ -34,7 +34,8 @@ jobs:
           bunx rimraf docs
           mkdir -p docs/api
           bunx typedoc src/index.ts --out docs/api
-          cp -r demo/* docs/
+          mkdir -p docs/demo
+          cp -r demo/* docs/demo/
           cp -r dist docs/dist
 
       - name: Add .nojekyll

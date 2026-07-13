@@ -3,6 +3,8 @@ name: GitHub Pages
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - v*
 
@@ -29,7 +31,10 @@ jobs:
       - name: Build docs
         run: |
           bunx rimraf docs
-          bunx typedoc src/index.ts --out docs
+          mkdir -p docs/api
+          bunx typedoc src/index.ts --out docs/api
+          cp -r demo/* docs/
+          cp -r dist docs/dist
 
       - name: Add .nojekyll
         run: touch ./docs/.nojekyll

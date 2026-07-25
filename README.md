@@ -53,6 +53,103 @@ const mapText = `...RPGENのマップテキストデータ...`;
 const rpgMap = RPGMap.parse(mapText);
 ```
 
+---
+
+## パース結果のサンプル / Sample of parsing results
+
+イベントポイント（`#EPOINT`）は、発動タイミング（`tm`）が自然言語の値にパースされます。
+また `#SEL` は入れ子になった分岐構造もパース可能です（`#SEL0-0` の中にさらに `#SEL1-0` を含む例）。
+
+入力（RPGENマップテキスト）:
+
+```
+#EPOINT tx:5,ty:3,
+#PH0 tm:1,
+#MSG
+m:この先には　わなが　あるようだ,
+#ED
+#SEL0-0 x:50,y:220,c:1,i0:しらべる,i1:やめておく,
+#SEL1-0 c:0,i0:はい,i1:いいえ,
+#MSG
+m:わなを　かいじょした！,
+#ED
+#SEL1-1
+#MSG
+m:なにも　しなかった,
+#ED
+#SELEND1
+#SEL0-1
+#MSG
+m:やめておいた,
+#ED
+#SELEND0
+#PHEND0
+#END
+```
+
+コード:
+
+```js
+const rpgMap = RPGMap.parse(mapText);
+const eventPoint = rpgMap.eventPoints.get(5, 3);
+const primaryPhase = eventPoint.phases[0];
+const commands = primaryPhase.sequence.map((c) => c.parse());
+```
+
+パース結果（`timing` が `1` ではなく `"touch"` になる点、`#SEL` が入れ子のまま `choices` 配列として表現される点に注目）:
+
+```json
+{
+  "position": { "x": 5, "y": 3 },
+  "timing": "touch",
+  "sequence": [
+    {
+      "type": "MSG",
+      "content": "この先には　わなが　あるようだ"
+    },
+    {
+      "type": "SEL",
+      "clearMessage": true,
+      "choices": [
+        {
+          "label": "しらべる",
+          "sequence": [
+            {
+              "type": "SEL",
+              "clearMessage": false,
+              "choices": [
+                {
+                  "label": "はい",
+                  "sequence": [
+                    { "type": "MSG", "content": "わなを　かいじょした！" }
+                  ]
+                },
+                {
+                  "label": "いいえ",
+                  "sequence": [
+                    { "type": "MSG", "content": "なにも　しなかった" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "やめておく",
+          "sequence": [
+            { "type": "MSG", "content": "やめておいた" }
+          ]
+        }
+      ],
+      "displayPosition": { "x": 50, "y": 220 }
+    }
+  ]
+}
+```
+
+`timing` の値は `EventTiming.Confirm`（`"confirm"`、決定ボタンで発動）または `EventTiming.Touch`（`"touch"`、接触で発動）のいずれかです。
+
+---
 
 ## ライセンス / License
 

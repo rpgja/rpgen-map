@@ -111,6 +111,7 @@ const commands = primaryPhase.sequence.map((c) => c.parse());
     },
     {
       "type": "SEL",
+      "mode": "gui",
       "clearMessage": true,
       "choices": [
         {
@@ -118,6 +119,7 @@ const commands = primaryPhase.sequence.map((c) => c.parse());
           "sequence": [
             {
               "type": "SEL",
+              "mode": "random",
               "clearMessage": false,
               "choices": [
                 {
@@ -148,6 +150,10 @@ const commands = primaryPhase.sequence.map((c) => c.parse());
   ]
 }
 ```
+
+`mode` は選択肢の動作モードを表します。
+- `"gui"` (`SelectMode.GUI`): `x`・`y` 座標が指定されており、その座標に選択肢のUIを表示します。
+- `"random"` (`SelectMode.Random`): `x`・`y` 座標が省略されており、ランダムに1つの選択肢が自動選択されます（選択UIは表示されません）。
 
 `timing` の値は `EventTiming.Confirm`（`"confirm"`、決定ボタンで発動）または `EventTiming.Touch`（`"touch"`、接触で発動）のいずれかです。
 

@@ -4,6 +4,7 @@ import {
   CommandType,
   RawCommand,
   type SelectChoice,
+  SelectMode,
 } from "@/types/command.js";
 
 const parseSequence = (input: string): Command[] =>
@@ -50,6 +51,7 @@ m:いいえを押した,
     }
 
     expect(select.clearMessage).toBe(true);
+    expect(select.mode).toBe(SelectMode.GUI);
     expect(select.displayPosition).toStrictEqual({ x: 50, y: 220 });
     expect(select.choices).toStrictEqual([
       {
@@ -63,7 +65,7 @@ m:いいえを押した,
     ]);
   });
 
-  test("Select without x and y coordinates leaves displayPosition as undefined (random selection)", () => {
+  test("Select without x and y coordinates sets mode to SelectMode.Random and displayPosition to undefined", () => {
     const [select] = parseSequence(`#SEL1-0 c:0,i0:Battle☆,i1:Boss Battle☆,
 #CH_YB
 v:QElM1DgjrpA,
@@ -78,6 +80,7 @@ v:nnyxOD5tR5Y,
       throw new Error("Not a select command.");
     }
 
+    expect(select.mode).toBe(SelectMode.Random);
     expect(select.displayPosition).toBeUndefined();
     expect(select.choices).toHaveLength(2);
   });

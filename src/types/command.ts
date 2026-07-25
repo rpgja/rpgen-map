@@ -197,17 +197,22 @@ export class RawCommand {
         });
       }
 
+      const mode =
+        params.x !== undefined && params.y !== undefined
+          ? SelectMode.GUI
+          : SelectMode.Random;
+
       const selectCommand: CommandMap[typeof CommandType.Select] = {
         type: CommandType.Select,
+        mode,
         clearMessage: parseFlag(params.c),
         choices,
       };
 
-      // xとyがない場合はランダムな位置に表示される
-      if (params.x !== undefined && params.y !== undefined) {
+      if (mode === SelectMode.GUI) {
         selectCommand.displayPosition = {
-          x: Number(params.x),
-          y: Number(params.y),
+          x: Number(params.x ?? 0),
+          y: Number(params.y ?? 0),
         };
       }
 
@@ -328,6 +333,13 @@ export type ScreenEffectColor =
   | { type: typeof ScreenEffectColorType.Color; color: RgbaColor }
   | { type: typeof ScreenEffectColorType.Gradient; aPosition: PercentPosition; bPosition: PercentPosition; aColor: RgbaColor; bColor: RgbaColor; stopPosition: number };
 
+export const SelectMode = {
+  GUI: "gui",
+  Random: "random",
+} as const;
+
+export type SelectMode = (typeof SelectMode)[keyof typeof SelectMode];
+
 /**
  * 選択肢の分岐
  *
@@ -345,6 +357,7 @@ export type CommandParamsMap = {
       ? { delay: number }
       : K extends typeof CommandType.Select
         ? {
+            mode: SelectMode;
             displayPosition?: Position;
             clearMessage: boolean;
             choices: SelectChoice[];

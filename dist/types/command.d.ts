@@ -101,6 +101,11 @@ export type ScreenEffectColor = {
     bColor: RgbaColor;
     stopPosition: number;
 };
+export declare const SelectMode: {
+    readonly GUI: "gui";
+    readonly Random: "random";
+};
+export type SelectMode = (typeof SelectMode)[keyof typeof SelectMode];
 /**
  * 選択肢の分岐
  *
@@ -116,6 +121,7 @@ export type CommandParamsMap = {
     } : K extends typeof CommandType.Wait ? {
         delay: number;
     } : K extends typeof CommandType.Select ? {
+        mode: SelectMode;
         displayPosition?: Position;
         clearMessage: boolean;
         choices: SelectChoice[];

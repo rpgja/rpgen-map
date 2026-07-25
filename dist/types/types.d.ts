@@ -11,10 +11,19 @@ export type Size = {
     height: number;
 };
 export declare const Direction: {
-    readonly North: 0;
-    readonly East: 1;
-    readonly South: 2;
-    readonly West: 3;
+    readonly North: "north";
+    readonly East: "east";
+    readonly South: "south";
+    readonly West: "west";
 };
 export type Direction = (typeof Direction)[keyof typeof Direction];
+/**
+ * マップデータにおける生の値
+ */
+export declare const RawDirection: Record<Direction, number>;
+/**
+ * 未知の値の場合はundefinedを返す
+ */
+export declare const parseDirection: (raw: string | undefined) => Direction | undefined;
+export declare const stringifyDirection: (direction: Direction) => string;
 //# sourceMappingURL=types.d.ts.map

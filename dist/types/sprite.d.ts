@@ -6,21 +6,33 @@ export declare const SpriteType: {
     /**
      * Standard still DQ material.
      */
-    readonly DQStillSprite: 0;
+    readonly DQStillSprite: "dqStillSprite";
     /**
      * Standard animation DQ material.
      */
-    readonly DQAnimationSprite: 1;
+    readonly DQAnimationSprite: "dqAnimationSprite";
     /**
      * User-created still material.
      */
-    readonly CustomStillSprite: 2;
+    readonly CustomStillSprite: "customStillSprite";
     /**
      * User-created animation material.
      */
-    readonly CustomAnimationSprite: 3;
+    readonly CustomAnimationSprite: "customAnimationSprite";
 };
 export type SpriteType = (typeof SpriteType)[keyof typeof SpriteType];
+/**
+ * #HUMANチャンクのスプライト指定における接頭辞
+ *
+ * 接頭辞がない場合は標準素材（DQAnimationSprite）を指す
+ */
+export declare const RawSpritePrefix: Record<typeof SpriteType.CustomAnimationSprite | typeof SpriteType.CustomStillSprite, string>;
+/**
+ * 標準素材の静止スプライトを表す生の値の区切り文字
+ *
+ * e.g. "12_3"
+ */
+export declare const RAW_DQ_STILL_SPRITE_SEPARATOR = "_";
 export declare const DQAnimationSpriteSurface: {
     /**
      * 勇者

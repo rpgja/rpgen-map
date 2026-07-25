@@ -1,5 +1,5 @@
 import type { DQAnimationSpriteSurface } from "./types/sprite.js";
-import type { Direction, Position } from "./types/types.js";
+import { type Direction, type Position } from "./types/types.js";
 export declare const ANIMATION_SPRITE_FLIP_INTERVAL = 600;
 export declare const RPGEN_CHIP_SIZE = 16;
 export declare const getDQAnimationSpritePosition: (surface: DQAnimationSpriteSurface, direction: Direction, frame?: number) => Position;

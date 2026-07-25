@@ -1,10 +1,10 @@
 import { InfinityChipMap, TileChipMap } from "./chip.js";
 import { type EventPoint } from "./types/event-point.js";
-import type { Human } from "./types/human.js";
+import { type Human } from "./types/human.js";
 import type { LookPoint } from "./types/look-point.js";
 import type { TeleportPoint } from "./types/teleport-point.js";
 import type { TreasureBoxPoint } from "./types/treasure-box-point.js";
-import type { Position } from "./types/types.js";
+import { type Position } from "./types/types.js";
 export type RPGMapInit = {
     initialHeroPosition?: Position;
     backgroundImageUrl?: string;

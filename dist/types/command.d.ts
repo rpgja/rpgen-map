@@ -3,6 +3,8 @@ import type { RgbaColor } from "./color.js";
 export declare class RawCommand {
     #private;
     constructor(name: string, body: string);
+    get name(): string;
+    get body(): string;
     static parseSequence(input: string): RawCommand[];
     toString(): string;
     parse(): Command;
@@ -99,6 +101,15 @@ export type ScreenEffectColor = {
     bColor: RgbaColor;
     stopPosition: number;
 };
+/**
+ * 選択肢の分岐
+ *
+ * 表示名は重複しうるため、配列で順序どおりに保持する
+ */
+export type SelectChoice = {
+    label: string;
+    sequence: CommandSequence;
+};
 export type CommandParamsMap = {
     [K in CommandType]: K extends typeof CommandType.Message ? {
         content: string;
@@ -107,7 +118,7 @@ export type CommandParamsMap = {
     } : K extends typeof CommandType.Select ? {
         displayPosition?: Position;
         clearMessage: boolean;
-        choices: Map<string, CommandSequence>;
+        choices: SelectChoice[];
     } : {
         params: Record<string, string>;
     };

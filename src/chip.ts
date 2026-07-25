@@ -1,6 +1,15 @@
 import { checkWalkableTile } from "@/sprite.js";
-import { SpriteType, type StillSprite } from "@/types/sprite.js";
-import { type RawTile, type Tile, toRawTile } from "@/types/tile.js";
+import {
+  RAW_DQ_STILL_SPRITE_SEPARATOR,
+  SpriteType,
+  type StillSprite,
+} from "@/types/sprite.js";
+import {
+  RAW_TILE_COLLISION_SUFFIX,
+  type RawTile,
+  type Tile,
+  toRawTile,
+} from "@/types/tile.js";
 import type { Size } from "@/types/types.js";
 import { LargeMap } from "@/utils/collections.js";
 
@@ -88,9 +97,9 @@ export class TileChipMap {
 
     let collision: boolean;
     let sprite: StillSprite;
-    if (rawTile.includes("_")) {
+    if (rawTile.includes(RAW_DQ_STILL_SPRITE_SEPARATOR)) {
       collision = !checkWalkableTile(rawTile);
-      const surface = rawTile.split("_");
+      const surface = rawTile.split(RAW_DQ_STILL_SPRITE_SEPARATOR);
       sprite = {
         type: SpriteType.DQStillSprite,
         surface: {
@@ -99,9 +108,9 @@ export class TileChipMap {
         },
       };
     } else {
-      collision = rawTile.includes("C");
+      collision = rawTile.includes(RAW_TILE_COLLISION_SUFFIX);
       // TODO: RawTileへのキャストが安全か未確認
-      rawTile = toRawTile(rawTile.replaceAll("C", ""));
+      rawTile = toRawTile(rawTile.replaceAll(RAW_TILE_COLLISION_SUFFIX, ""));
       sprite = {
         type: SpriteType.CustomStillSprite,
         id: Number(rawTile.match(/\d+/)?.[0]),

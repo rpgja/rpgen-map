@@ -7,22 +7,42 @@ export const SpriteType = {
   /**
    * Standard still DQ material.
    */
-  DQStillSprite: 0,
+  DQStillSprite: "dqStillSprite",
   /**
    * Standard animation DQ material.
    */
-  DQAnimationSprite: 1,
+  DQAnimationSprite: "dqAnimationSprite",
   /**
    * User-created still material.
    */
-  CustomStillSprite: 2,
+  CustomStillSprite: "customStillSprite",
   /**
    * User-created animation material.
    */
-  CustomAnimationSprite: 3,
+  CustomAnimationSprite: "customAnimationSprite",
 } as const;
 
 export type SpriteType = (typeof SpriteType)[keyof typeof SpriteType];
+
+/**
+ * #HUMANチャンクのスプライト指定における接頭辞
+ *
+ * 接頭辞がない場合は標準素材（DQAnimationSprite）を指す
+ */
+export const RawSpritePrefix: Record<
+  typeof SpriteType.CustomAnimationSprite | typeof SpriteType.CustomStillSprite,
+  string
+> = {
+  [SpriteType.CustomAnimationSprite]: "A",
+  [SpriteType.CustomStillSprite]: "-",
+};
+
+/**
+ * 標準素材の静止スプライトを表す生の値の区切り文字
+ *
+ * e.g. "12_3"
+ */
+export const RAW_DQ_STILL_SPRITE_SEPARATOR = "_";
 
 export const DQAnimationSpriteSurface = {
   /**

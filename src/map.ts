@@ -3,21 +3,41 @@ import { RawCommand } from "@/types/command.js";
 import {
   type EventPoint,
   EventTiming,
+  PRIMARY_EVENT_PHASE_INDEX,
+  type PrimaryEventPhase,
   type SecondaryEventPhase,
+  parseEventTiming,
+  stringifyEventTiming,
 } from "@/types/event-point.js";
-import type { Human, HumanBehavior } from "@/types/human.js";
+import {
+  type Human,
+  HumanBehavior,
+  parseHumanBehavior,
+  stringifyHumanBehavior,
+} from "@/types/human.js";
 import type { LookPoint } from "@/types/look-point.js";
 import {
   type DQAnimationSpriteSurface,
+  RawSpritePrefix,
   type Sprite,
   SpriteType,
 } from "@/types/sprite.js";
 import type { TeleportPoint } from "@/types/teleport-point.js";
 import { toRawTile } from "@/types/tile.js";
 import type { TreasureBoxPoint } from "@/types/treasure-box-point.js";
-import type { Direction, Position } from "@/types/types.js";
+import {
+  Direction,
+  type Position,
+  parseDirection,
+  stringifyDirection,
+} from "@/types/types.js";
 import { escapeMetaChars, unescapeMetaChars } from "@/utils/escape.js";
-import { ChunkParser, parseCSP } from "@/utils/parser.js";
+import {
+  ChunkParser,
+  parseCSP,
+  parseFlag,
+  stringifyFlag,
+} from "@/utils/parser.js";
 
 export type RPGMapInit = {
   initialHeroPosition?: Position;
@@ -66,6 +86,21 @@ export class RPGMap {
 
   static readonly #DEFAULT_BACKGROUND_IMAGE_URL =
     "http://i.imgur.com/qiN1und.jpg";
+
+  /**
+   * tmが未指定の場合の発動のきっかけ
+   */
+  static readonly #DEFAULT_EVENT_TIMING = EventTiming.Confirm;
+
+  /**
+   * フェイズを表すチャンク名 e.g. "#PH0"
+   */
+  static readonly #PHASE_CHUNK_NAME = "PH";
+
+  /**
+   * フェイズの終端を表すチャンク名 e.g. "#PHEND0"
+   */
+  static readonly #PHASE_TERMINATOR = "PHEND";
 
   constructor(init: RPGMapInit) {
     this.initialHeroPosition = init.initialHeroPosition ?? { x: 0, y: 0 };
@@ -160,7 +195,7 @@ export class RPGMap {
     let sprite: Sprite;
 
     switch (rawSprite?.[0]) {
-      case "A": {
+      case RawSpritePrefix[SpriteType.CustomAnimationSprite]: {
         sprite = {
           type: SpriteType.CustomAnimationSprite,
           id: Number(rawSprite.slice(1)),
@@ -169,7 +204,7 @@ export class RPGMap {
         break;
       }
 
-      case "-": {
+      case RawSpritePrefix[SpriteType.CustomStillSprite]: {
         sprite = {
           type: SpriteType.CustomStillSprite,
           id: Number(rawSprite.slice(1)),
@@ -193,9 +228,9 @@ export class RPGMap {
       sprite,
       message: unescapeMetaChars(message),
       position,
-      // TODO: パーサー自体は深く検証するべきではないがそうする場合は型もパース時点ではゆるくあるべき
-      direction: Number(direction) as Direction,
-      behavior: Number(behavior) as HumanBehavior,
+      // TODO: パーサー自体は深く検証するべきではないが、未知の値は既定値として扱う
+      direction: parseDirection(direction) ?? Direction.North,
+      behavior: parseHumanBehavior(behavior) ?? HumanBehavior.Still,
       speed: Number(speed),
     };
   }
@@ -222,7 +257,7 @@ export class RPGMap {
 
     return {
       position,
-      once: once === "1",
+      once: parseFlag(once),
       message: unescapeMetaChars(message),
     };
   }
@@ -250,31 +285,25 @@ export class RPGMap {
     const [, pos = "", body = ""] =
       value.trimStart().match(/^(tx:\d+,ty:\d+),\r?\n(.+)$/s) ?? [];
     const { tx, ty } = parseCSP(pos);
+    const primaryPhase: PrimaryEventPhase = {
+      timing: RPGMap.#DEFAULT_EVENT_TIMING,
+      sequence: [],
+    };
+    const createSecondaryPhase = (): SecondaryEventPhase => ({
+      timing: RPGMap.#DEFAULT_EVENT_TIMING,
+      condition: {},
+      sequence: [],
+    });
     const eventPoint: EventPoint = {
       position: {
         x: Number(tx),
         y: Number(ty),
       },
       phases: [
-        {
-          timing: EventTiming.Look,
-          sequence: [],
-        },
-        {
-          timing: EventTiming.Look,
-          condition: {},
-          sequence: [],
-        },
-        {
-          timing: EventTiming.Look,
-          condition: {},
-          sequence: [],
-        },
-        {
-          timing: EventTiming.Look,
-          condition: {},
-          sequence: [],
-        },
+        primaryPhase,
+        createSecondaryPhase(),
+        createSecondaryPhase(),
+        createSecondaryPhase(),
       ],
     };
 
@@ -283,8 +312,11 @@ export class RPGMap {
     while (!parser.isEnded()) {
       const name = parser.parseName();
       const phaseNumber = name.match(/\d+$/)?.[0];
-      const value = parser.parseChunk(`#PHEND${phaseNumber}`);
-      const phase = eventPoint.phases[Number(phaseNumber)];
+      const value = parser.parseChunk(
+        `#${RPGMap.#PHASE_TERMINATOR}${phaseNumber}`,
+      );
+      const phaseIndex = Number(phaseNumber);
+      const phase = eventPoint.phases[phaseIndex];
 
       if (!phase) {
         continue;
@@ -293,14 +325,14 @@ export class RPGMap {
       const [, cond = "", body = ""] =
         value.trimStart().match(/(.+?),\r?\n(.+)/s) ?? [];
       const { tm, sw, g } = parseCSP(cond);
+      const timing = parseEventTiming(tm);
 
-      if (tm) {
-        // TODO: enumからオブジェクトに変えた影響でas必須
-        phase.timing = Number(tm) as EventTiming;
+      if (timing !== undefined) {
+        phase.timing = timing;
       }
 
       // Non primary phase and has phase condition
-      if (name !== "PH0") {
+      if (phaseIndex !== PRIMARY_EVENT_PHASE_INDEX) {
         if (sw && "condition" in phase) {
           phase.condition.switch = Number(sw);
         }
@@ -425,12 +457,6 @@ export class RPGMap {
       }
     }
 
-    console.log({
-      initialHeroPosition,
-      bgmUrl,
-      backgroundImageUrl,
-    });
-
     return new RPGMap({
       initialHeroPosition,
       humans,
@@ -532,16 +558,20 @@ export class RPGMap {
             case SpriteType.DQAnimationSprite:
               return human.sprite.surface;
             case SpriteType.CustomAnimationSprite:
-              return `A${human.sprite.id}`;
+              return `${RawSpritePrefix[SpriteType.CustomAnimationSprite]}${
+                human.sprite.id
+              }`;
             case SpriteType.CustomStillSprite:
-              return `-${human.sprite.id}`;
+              return `${RawSpritePrefix[SpriteType.CustomStillSprite]}${
+                human.sprite.id
+              }`;
           }
         })();
-        str += `${id},${human.position.x},${human.position.y},${
-          human.direction
-        },${human.behavior},${human.speed},${escapeMetaChars(
-          human.message,
-        )}#END\n`;
+        str += `${id},${human.position.x},${human.position.y},${stringifyDirection(
+          human.direction,
+        )},${stringifyHumanBehavior(human.behavior)},${
+          human.speed
+        },${escapeMetaChars(human.message)}#END\n`;
         str += "\n";
       }
     }
@@ -564,9 +594,9 @@ export class RPGMap {
     if (rpgMap.lookPoints) {
       for (const p of rpgMap.lookPoints) {
         str += "#SPOINT\n";
-        str += `${p.position.x},${p.position.y},${
-          p.once ? 1 : 0
-        },${escapeMetaChars(p.message)}#END\n`;
+        str += `${p.position.x},${p.position.y},${stringifyFlag(
+          p.once,
+        )},${escapeMetaChars(p.message)}#END\n`;
         str += "\n";
       }
     }
@@ -579,7 +609,9 @@ export class RPGMap {
             continue;
           }
 
-          let phaseHeader = `#PH${i} tm:${p.timing},`;
+          let phaseHeader = `#${RPGMap.#PHASE_CHUNK_NAME}${i} tm:${stringifyEventTiming(
+            p.timing,
+          )},`;
 
           // TODO: PH0がないと壊れたデータになる
           if (
@@ -599,7 +631,7 @@ export class RPGMap {
             str += "\n";
           }
 
-          str += `#PHEND${i}\n`;
+          str += `#${RPGMap.#PHASE_TERMINATOR}${i}\n`;
         }
 
         str += "#END\n\n";

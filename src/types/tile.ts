@@ -1,4 +1,8 @@
-import { SpriteType, type StillSprite } from "@/types/sprite.js";
+import {
+  RAW_DQ_STILL_SPRITE_SEPARATOR,
+  SpriteType,
+  type StillSprite,
+} from "@/types/sprite.js";
 import type { Position } from "@/types/types.js";
 import type { Brand } from "ts-brand";
 
@@ -8,6 +12,13 @@ import type { Brand } from "ts-brand";
 export type RawTile = Brand<string, "rawTile">;
 
 export const toRawTile = (rawTile: string) => rawTile as RawTile;
+
+/**
+ * 当たり判定を持つことを表す接尾辞
+ *
+ * e.g. "123C"
+ */
+export const RAW_TILE_COLLISION_SUFFIX = "C";
 
 export type Tile = {
   sprite: StillSprite;
@@ -21,13 +32,15 @@ export const castTile2RawTile = (tile: Tile): RawTile => {
       let rawTile = "";
       rawTile += tile.sprite.id;
       if (tile.collision) {
-        rawTile += "C";
+        rawTile += RAW_TILE_COLLISION_SUFFIX;
       }
       return toRawTile(rawTile);
     }
     case SpriteType.DQStillSprite: {
       // collisionはここでは反映されず、checkWalkableTile(RawTile)にて判定される
-      return toRawTile(`${tile.sprite.surface.x}_${tile.sprite.surface.y}`);
+      return toRawTile(
+        `${tile.sprite.surface.x}${RAW_DQ_STILL_SPRITE_SEPARATOR}${tile.sprite.surface.y}`,
+      );
     }
     default: {
       throw new Error("Unknown tile layer.");

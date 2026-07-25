@@ -1,5 +1,5 @@
 import type { DQAnimationSpriteSurface } from "@/types/sprite.js";
-import type { Direction, Position } from "@/types/types.js";
+import { type Direction, type Position, RawDirection } from "@/types/types.js";
 
 export const ANIMATION_SPRITE_FLIP_INTERVAL = 600;
 
@@ -12,7 +12,8 @@ export const getDQAnimationSpritePosition = (
 ): Position => {
   const half = surface / 2;
   const ySpacing = 15 + 15 * Math.round(half) + 17 * Math.floor(half);
-  const directionYOffset = direction * 32;
+  // 素材画像では方角ごとに縦へ並んでいる
+  const directionYOffset = RawDirection[direction] * 32;
   const y = directionYOffset + ySpacing + 16 * 7 * surface;
   const x = 4 + (16 + 32) * frame;
 

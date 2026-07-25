@@ -63,6 +63,25 @@ m:いいえを押した,
     ]);
   });
 
+  test("Select without x and y coordinates leaves displayPosition as undefined (random selection)", () => {
+    const [select] = parseSequence(`#SEL1-0 c:0,i0:Battle☆,i1:Boss Battle☆,
+#CH_YB
+v:QElM1DgjrpA,
+#ED
+#SEL1-1
+#CH_YB
+v:nnyxOD5tR5Y,
+#ED
+#SELEND1`);
+
+    if (select?.type !== CommandType.Select) {
+      throw new Error("Not a select command.");
+    }
+
+    expect(select.displayPosition).toBeUndefined();
+    expect(select.choices).toHaveLength(2);
+  });
+
   test("Choices with the same display name are kept separately", () => {
     const choices = expectSelect(
       parseSequence(`#SEL0-0 c:0,i0:2,i1:2,

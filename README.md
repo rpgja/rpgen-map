@@ -28,29 +28,31 @@ JavaScript/TypeScript で扱いやすいオブジェクトに変換するライ�
 
 ---
 
-## インストール（Node.js）
+---
 
-```bash
-npm install @rpgja/rpgen-map
-# または
-yarn add @rpgja/rpgen-map
-```
+## 使い方・パースの2段階処理 / Usage & Two-Stage Parsing
 
-```
+本ライブラリのパース処理は、**マップ全体**と**個別コマンド**の2段階構造になっています。
+
+1. **第1段階: マップ全体のパース (`RPGMap.parse(mapText)`)**
+   * マップ全体のデータ（タイル、配置、イベントポイント等）を解析し、`RPGMap` オブジェクトを返します。
+   * イベントフェイズ内のコマンドシーケンス (`phase.sequence`) は、テキストの相互変換（`stringify`）を可能にするため **`RawCommand`** オブジェクト（`#name` と未解釈の生文字列 `#body`）の配列として保持されます。
+
+2. **第2段階: コマンドの構造化パース (`rawCommand.parse()`)**
+   * 各 `RawCommand` の `.parse()` メソッドを呼び出すことで、選択肢（`#SEL`）の入れ子構造や各種パラメータが解釈され、型付けされた抽象構文木 **`Command`** オブジェクト（`SelectCommand`, `MessageCommand` など）に変換されます。
+
+```ts
 import { RPGMap } from "@rpgja/rpgen-map";
 
-const mapText = `...RPGENのマップテキストデータ...`;
+// 第1段階: マップ全体のパース
 const rpgMap = RPGMap.parse(mapText);
-```
 
-## インストール（ブラウザ）
-※未対応
+// イベントポイントとフェイズの取得
+const eventPoint = rpgMap.eventPoints.get(5, 3);
+const phase = eventPoint?.phases[0];
 
-```
-const { RPGMap } = await import("https://cdn.jsdelivr.net/npm/@rpgja/rpgen-map/dist/index.mjs");
-
-const mapText = `...RPGENのマップテキストデータ...`;
-const rpgMap = RPGMap.parse(mapText);
+// 第2段階: RawCommand[] から構造化された Command[] へ変換
+const structuredCommands = phase?.sequence.map((rawCmd) => rawCmd.parse());
 ```
 
 ---
